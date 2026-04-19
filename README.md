@@ -181,3 +181,41 @@ src/
 | Mock API | MSW v2 | No extra server process |
 | AI | Anthropic Claude 3.5 Sonnet | Direct fetch, no SDK |
 | Icons | Lucide React | Clean, tree-shakable |
+
+---
+
+## One Tricky Frontend Bug I Solved
+
+While building this project I hit a two-part TypeScript error that cascaded into 12+ failures across the codebase.
+
+**The problem:**  
+`@xyflow/react` v12 requires all node `data` objects to satisfy `Record<string, unknown>`. My node data was typed as a discriminated union of specific interfaces (`StartNodeData`, `TaskNodeData`, etc.) — none of which had an index signature, so TypeScript rejected every place `Node<WorkflowNodeData>` was used.
+
+At the same time, TypeScript 5.8 introduced `erasableSyntaxOnly` in the default Vite tsconfig, which bans `enum` at the type level. I had used `enum NodeType` throughout. Two root causes, one cascade of 12 errors.
+
+**The fix:**
+
+1. Replaced `enum NodeType` with a `const` object + type alias — identical runtime behavior, zero compile issues:
+```ts
+export const NodeType = { Start: 'start', Task: 'task', ... } as const
+export type NodeType = (typeof NodeType)[keyof typeof NodeType]
+```
+
+2. Made every node data interface explicitly extend `Record<string, unknown>`. This satisfies the @xyflow/react constraint while keeping all specific typed fields intact and the discriminated union fully functional:
+```ts
+export interface TaskNodeData extends Record<string, unknown> {
+  type: 'task'
+  label: string
+  assignee: string
+  // ... all fields still strongly typed
+}
+```
+
+Fixing both root causes cleared all 12 cascade errors in one pass. The key insight was recognizing these were two independent root causes — not 12 separate bugs — and tracing back to the source rather than patching each error site individually.
+
+
+---
+
+## Other Projects by Me
+
+- [Where Did My Money Go? (Expense Manager)](https://github.com/Madan2418/Where-did-my-money-go-)
