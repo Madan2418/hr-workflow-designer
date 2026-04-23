@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { Workflow, Cpu, FlaskConical, Settings } from 'lucide-react'
 import { WorkflowCanvas } from './components/canvas/WorkflowCanvas'
@@ -7,6 +7,8 @@ import { NodeFormPanel } from './components/forms/NodeFormPanel'
 import { SandboxPanel } from './components/sandbox/SandboxPanel'
 import { AIAnalysisPanel } from './components/ai/AIAnalysisPanel'
 import { useValidation } from './hooks/useValidation'
+import { useWorkflowStore } from './hooks/useWorkflowStore'
+import { TemplateModal } from './components/canvas/TemplateModal'
 
 type RightTab = 'config' | 'sandbox' | 'ai'
 
@@ -57,6 +59,24 @@ function RightPanel() {
 }
 
 export default function App() {
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
+  
+  const nodes = useWorkflowStore(s => s.nodes)
+  const edges = useWorkflowStore(s => s.edges)
+  
+  const stats = useMemo(() => {
+    const configured = nodes.filter(n => {
+      if (n.data.type === 'task') return !!(n.data as { assignee?: string }).assignee
+      if (n.data.type === 'automatedStep') return !!(n.data as { actionId?: string }).actionId
+      return true
+    }).length
+    return {
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+      completeness: nodes.length > 0 ? Math.round((configured / nodes.length) * 100) : 0,
+    }
+  }, [nodes, edges])
+
   return (
     <ReactFlowProvider>
       <div className="flex flex-col h-screen overflow-hidden">
@@ -67,27 +87,48 @@ export default function App() {
               <Workflow size={16} className="text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white leading-none">FlowForge HR</h1>
-              <p className="text-xs text-slate-500">HR Workflow Designer</p>
+              <h1 className="text-sm font-bold text-white leading-none tracking-tight">FlowForge HR</h1>
+              <p className="text-[11px] text-slate-500 font-medium">Workflow Designer AI</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-600 hidden sm:block">
-              Tredence Full Stack Intern — Case Study
-            </span>
-            <span className="text-xs bg-accent/20 text-accent border border-accent/30 px-2 py-0.5 rounded-full font-medium">
+          
+          <div className="flex items-center gap-4">
+            {stats.nodeCount > 0 && (
+              <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-surfaceBright border border-border text-[11px] font-medium text-slate-400">
+                <span className="flex items-center gap-1.5 text-indigo-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" /> Nodes: {stats.nodeCount}
+                </span>
+                <span className="w-px h-3 bg-border" />
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  Edges: {stats.edgeCount}
+                </span>
+                <span className="w-px h-3 bg-border" />
+                <span className="flex items-center gap-1.5 text-emerald-400">
+                  Ready: {stats.completeness}%
+                </span>
+              </div>
+            )}
+
+            <button 
+              onClick={() => setIsTemplateModalOpen(true)}
+              className="btn-secondary"
+            >
+              Templates
+            </button>
+            <span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md font-bold tracking-wide">
               AI-Powered
             </span>
           </div>
         </header>
 
         {/* Main layout */}
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 relative">
           <Sidebar />
-          <WorkflowCanvas />
+          <WorkflowCanvas onOpenTemplates={() => setIsTemplateModalOpen(true)} />
           <RightPanel />
         </div>
       </div>
+      <TemplateModal isOpen={isTemplateModalOpen} onClose={() => setIsTemplateModalOpen(false)} />
     </ReactFlowProvider>
   )
 }

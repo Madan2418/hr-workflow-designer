@@ -13,14 +13,14 @@ FlowForge HR is a visual drag-and-drop HR workflow designer. HR admins can:
 - **Configure** each node with a dedicated, type-safe edit form
 - **Validate** the graph structure in real-time (cycles, disconnected nodes, missing start/end)
 - **Simulate** the workflow via a mock API and see a step-by-step execution log
-- **Analyze** the workflow with AI (Anthropic Claude) for issues and improvement suggestions
+- **Analyze** the workflow with AI (Anthropic, OpenAI-compatible, or Gemini) for issues and improvement suggestions
 - **Export / Import** workflows as JSON
 
 ---
 
 ## AI Feature — The Differentiator
 
-When a workflow is designed, clicking **"Analyze with AI"** sends the serialized graph to the Anthropic Claude API. Claude returns:
+When a workflow is designed, clicking **"Analyze with AI"** sends the serialized graph to the configured AI provider. The model returns:
 
 - **Issues** — logical problems (e.g., approval with no predecessor task)
 - **Suggestions** — improvements based on the workflow type
@@ -28,7 +28,7 @@ When a workflow is designed, clicking **"Analyze with AI"** sends the serialized
 
 This is **additive** — all spec requirements are met fully before the AI layer.
 
-> **Note:** AI analysis requires an Anthropic API key. The mock API (simulate, automations) works without any key.
+> **Note:** AI analysis requires a supported API key. The mock API (simulate, automations) works without any key.
 
 ---
 
@@ -40,8 +40,17 @@ npm install
 
 # 2. (Optional) Enable AI analysis
 cp .env.example .env.local
-# Then add your Anthropic API key to .env.local:
+# Then add one AI configuration to .env.local:
+# Generic:
+# VITE_AI_API_KEY=
+# VITE_AI_PROVIDER=openai|anthropic|gemini|openai-compatible
+# VITE_AI_MODEL=
+# VITE_AI_BASE_URL=
+#
+# Or provider-specific:
 # VITE_ANTHROPIC_API_KEY=sk-ant-...
+# VITE_OPENAI_API_KEY=sk-...
+# VITE_GEMINI_API_KEY=AIza...
 
 # 3. Start the development server
 npm run dev
@@ -82,7 +91,7 @@ Navigate to **http://localhost:5173/**
 
 17. Switch to the **AI** tab in the right panel
 18. Click **Analyze with AI**
-19. If `VITE_ANTHROPIC_API_KEY` is set, Claude returns structured JSON with issues, suggestions, and a summary
+19. If an AI key is set, the configured provider returns structured JSON with issues, suggestions, and a summary
 20. If no key is set, a clear warning is shown
 
 ### Export / Import
@@ -95,7 +104,8 @@ Navigate to **http://localhost:5173/**
 
 24. **Zoom In/Out** — toolbar buttons or scroll wheel
 25. **Minimap** — bottom-right corner of the canvas; colored by node type
-26. **Clear** — trash icon in toolbar resets the canvas
+26. **Delete selected node** — trash icon in toolbar removes the selected node
+27. **Clear canvas** — eraser icon in toolbar resets the canvas
 
 ---
 
@@ -117,9 +127,9 @@ type WorkflowNodeData = StartNodeData | TaskNodeData | ApprovalNodeData | ...
 
 `NodeFormPanel` switches on `data.type` and TypeScript narrows to the exact interface. No `as any`, no optional fields everywhere. Adding a new node type means adding one interface, one form, and one case — the compiler enforces completeness.
 
-### Why Direct Anthropic Fetch (not LangChain/Vercel AI)?
+### Why Direct Provider Fetch (not LangChain/Vercel AI)?
 
-This is a frontend-only prototype. Adding a backend SDK just to call one API endpoint would be over-engineering. The direct `fetch()` keeps the bundle minimal and the flow transparent.
+This is a frontend-only prototype. Adding a backend SDK just to call one API endpoint would be over-engineering. Direct `fetch()` calls keep the bundle minimal and the flow transparent while still allowing multiple providers.
 
 ---
 
@@ -179,7 +189,7 @@ src/
 | Styling | Tailwind CSS v3 | Required by JD |
 | State | Zustand | Selector-based, prevents drag re-renders |
 | Mock API | MSW v2 | No extra server process |
-| AI | Anthropic Claude 3.5 Sonnet | Direct fetch, no SDK |
+| AI | Anthropic / OpenAI-compatible / Gemini | Direct fetch, no SDK |
 | Icons | Lucide React | Clean, tree-shakable |
 
 ---

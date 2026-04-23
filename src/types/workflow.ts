@@ -2,10 +2,11 @@ import type { Node, Edge } from '@xyflow/react'
 import type { WorkflowNodeData } from './nodes'
 
 export type WorkflowNode = Node<WorkflowNodeData>
+export type WorkflowEdge = Edge
 
 export interface WorkflowGraph {
   nodes: WorkflowNode[]
-  edges: Edge[]
+  edges: WorkflowEdge[]
 }
 
 export interface SimulationStep {

@@ -2,11 +2,13 @@ import { useCallback, useRef } from 'react'
 import {
   ReactFlow,
   Background,
-  Controls,
   MiniMap,
   BackgroundVariant,
+  MarkerType,
   useReactFlow,
+  type EdgeMouseHandler,
   type NodeMouseHandler,
+  type OnSelectionChangeFunc,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useWorkflowStore } from '../../hooks/useWorkflowStore'
@@ -14,7 +16,14 @@ import { nodeTypes } from '../nodes/nodeRegistry'
 import { CanvasToolbar } from './CanvasToolbar'
 import type { NodeType } from '../../types/nodes'
 
-export function WorkflowCanvas() {
+const flowProOptions = { hideAttribution: true }
+const flowDefaultEdgeOptions = {
+  animated: true,
+  style: { stroke: '#4f52a0', strokeWidth: 2 },
+  markerEnd: { type: MarkerType.ArrowClosed },
+}
+
+export function WorkflowCanvas({ onOpenTemplates }: { onOpenTemplates?: () => void }) {
   const {
     nodes,
     edges,
@@ -22,6 +31,8 @@ export function WorkflowCanvas() {
     onEdgesChange,
     onConnect,
     setSelectedNode,
+    setSelectedEdge,
+    clearSelection,
     addNode,
   } = useWorkflowStore()
 
@@ -33,8 +44,26 @@ export function WorkflowCanvas() {
   }, [setSelectedNode])
 
   const onPaneClick = useCallback(() => {
-    setSelectedNode(null)
-  }, [setSelectedNode])
+    clearSelection()
+  }, [clearSelection])
+
+  const onEdgeClick: EdgeMouseHandler = useCallback((_, edge) => {
+    setSelectedEdge(edge.id)
+  }, [setSelectedEdge])
+
+  const onSelectionChange: OnSelectionChangeFunc = useCallback(({ nodes: selectedNodes, edges: selectedEdges }) => {
+    if (selectedNodes.length > 0) {
+      setSelectedNode(selectedNodes[0].id)
+      return
+    }
+
+    if (selectedEdges.length > 0) {
+      setSelectedEdge(selectedEdges[0].id)
+      return
+    }
+
+    clearSelection()
+  }, [clearSelection, setSelectedEdge, setSelectedNode])
 
   const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -61,14 +90,15 @@ export function WorkflowCanvas() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onNodeClick={onNodeClick}
+          onEdgeClick={onEdgeClick}
+          onSelectionChange={onSelectionChange}
           onPaneClick={onPaneClick}
           deleteKeyCode="Delete"
           fitView
-          proOptions={{ hideAttribution: true }}
-          defaultEdgeOptions={{ animated: true, style: { stroke: '#6366f1', strokeWidth: 2 } }}
+          proOptions={flowProOptions}
+          defaultEdgeOptions={flowDefaultEdgeOptions}
         >
           <Background variant={BackgroundVariant.Dots} color="#2e3148" gap={20} size={1.2} />
-          <Controls position="bottom-left" />
           <MiniMap
             position="bottom-right"
             nodeColor={(n) => {
@@ -86,9 +116,22 @@ export function WorkflowCanvas() {
         </ReactFlow>
 
         {nodes.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="text-5xl mb-4 opacity-20">⬡</div>
-            <p className="text-slate-600 text-sm">Drag nodes from the sidebar to start building</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none bg-canvas/30 backdrop-blur-[2px]">
+            <div className="w-16 h-16 rounded-2xl bg-surface border border-borderBright flex items-center justify-center mb-4 shadow-xl">
+              <div className="text-3xl opacity-50">✦</div>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Build Your Workflow</h3>
+            <p className="text-slate-400 text-sm max-w-[280px] text-center mb-6 leading-relaxed">
+              Drag nodes from the sidebar onto the canvas to start building from scratch, or choose a pre-built template.
+            </p>
+            {onOpenTemplates && (
+              <button 
+                onClick={onOpenTemplates}
+                className="btn-primary w-auto px-6 pointer-events-auto"
+              >
+                Choose a Template
+              </button>
+            )}
           </div>
         )}
       </div>

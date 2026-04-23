@@ -16,31 +16,35 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-48 flex flex-col gap-2 p-3 border-r border-border bg-surface overflow-y-auto shrink-0">
-      <p className="text-xs text-slate-500 uppercase tracking-wider font-medium px-1 mb-1">
+    <aside className="w-[220px] flex flex-col gap-3 p-4 border-r border-border bg-surface overflow-y-auto shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.2)]">
+      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-1">
         Node Palette
       </p>
-      {nodeItems.map(({ type, label, color, icon, desc }) => (
-        <div
-          key={type}
-          draggable
-          onDragStart={e => onDragStart(e, type)}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 cursor-grab border border-transparent
-            hover:border-border hover:bg-surfaceHover active:cursor-grabbing transition-all select-none"
-          style={{ background: `${color}11` }}
-        >
+      <div className="flex flex-col gap-2">
+        {nodeItems.map(({ type, label, color, icon, desc }) => (
           <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-white"
-            style={{ background: `${color}33`, color }}
+            key={type}
+            draggable
+            onDragStart={e => onDragStart(e, type)}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-grab border border-transparent
+              hover:border-border hover:bg-surfaceBright active:cursor-grabbing active:scale-[0.98] transition-all select-none group relative overflow-hidden"
+            style={{ background: `linear-gradient(90deg, ${color}0A, transparent)` }}
           >
-            {icon}
+            <div className="absolute left-0 top-0 bottom-0 w-[2px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: color }} />
+            
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white shadow-sm"
+              style={{ background: `${color}1A`, color, border: `1px solid ${color}30` }}
+            >
+              {icon}
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-slate-200 group-hover:text-white transition-colors">{label}</p>
+              <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{desc}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-white">{label}</p>
-            <p className="text-xs text-slate-500 leading-tight">{desc}</p>
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       <div className="mt-auto border-t border-border pt-3">
         <p className="text-xs text-slate-600 px-1 leading-relaxed">
